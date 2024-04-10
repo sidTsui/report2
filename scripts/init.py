@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-#source: in class provided recourses: https://github.com/hsaeidi-uncw/ur5e_control.git
+#source: in class provided recourses: https://github.com/hsaeidi-uncw/ur5e_control.git, lecture slides, online sources
 #Sidney Tsui
 #Report 2
 import rospy

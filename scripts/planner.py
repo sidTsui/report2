@@ -36,15 +36,11 @@ def get_sphere(data):
 	raw_y = data.yc
 	raw_z = data.zc
 	rad = data.radius
-
-def message(Bool):
-	global test = Bool.data
 	
 if __name__ == '__main__':
 	# initialize the node
 	rospy.init_node('planner', anonymous = True)
 	rospy.Subscriber('sphere_params', SphereParams, get_sphere)
-	rospy.Subscriber('robot_on', Bool, message)
 	plan_pub = rospy.Publisher('/plan', Plan, queue_size=10)
 	# set a 10Hz frequency for this loop
 	loop_rate = rospy.Rate(10)
@@ -57,9 +53,8 @@ if __name__ == '__main__':
 	q_rot = Quaternion()
 	#source: lect 20, slide 11-12, https://wiki.ros.org/tf2/Tutorials
 	while not rospy.is_shutdown():
-		if test = True:
-			plan_pub.publish(plan)
-		else: 
+		try:
+			trans = tfBuffer.lookup_transform("base", "camera_color_optical_frame", rospy.Time())
 			#create message
 			frame_pt = tf2_geometry_msgs.PointStamped()#init obj
 			frame_pt.header.frame_id = 'camera_color_optical_frame'#set ID
@@ -97,6 +92,7 @@ if __name__ == '__main__':
 			# add this point to the plan
 			plan.points.append(plan_point2)
 			
+	
 			plan_point3 = Twist()
 			# define a point close to the initial position
 			#move to position 3
@@ -120,6 +116,13 @@ if __name__ == '__main__':
 			plan_point4.angular.z = 1.57
 			# add this point to the plan
 			plan.points.append(plan_point4)
-	
+		except (tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException):
+			print('Frames not available!!!')
+			loop_rate.sleep()
+			continue
+			
+		
+		# publish the plan
+		plan_pub.publish(plan)
 		# wait for 0.1 seconds until the next loop and repeat
 		loop_rate.sleep()

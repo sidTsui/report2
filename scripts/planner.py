@@ -36,71 +36,90 @@ def get_sphere(data):
 	raw_y = data.yc
 	raw_z = data.zc
 	rad = data.radius
-    
-   	def add_pt(linear_x, linear_y, linear_z, angular_x, angular_y, angular_z, plan):
-        add_point = Twist()#msg obj create
-        add_point.linear.x = linear_x
-        add_point.linear.y = linear_y
-        add_point.linear.z = linear_z
-        add_point.angular.x = angular_x
-        add_point.angular.y = angular_y
-        add_point.angular.z = angular_z
-        add.points.append(add_point)#add plan_point to plan
-		
-	
-	def get_curr(data):
-		global curr#set as global to be updated later
-		curr[0] = data.linear.x#update here
-		curr[1] = data.linear.y
-		curr[2] = data.linear.z
-		curr[3] = data.angular.x
-		curr[4] = data.angular.y
-		curr[5] = data.angular.z
 
+def message(Bool):
+	global test = Bool.data
+	
 if __name__ == '__main__':
 	# initialize the node
 	rospy.init_node('planner', anonymous = True)
-	rospy.Subscriber('sphere_params', SphereParams, get_sphere_data)
-	rospy.Subscriber('/ur5e/toolpose', Twist, get_curr)
- 	#publisher
-    plan_pub = rospy.Publisher('/plan', Plan, queue_size=10)
+	rospy.Subscriber('sphere_params', SphereParams, get_sphere)
+	rospy.Subscriber('robot_on', Bool, message)
+	plan_pub = rospy.Publisher('/plan', Plan, queue_size=10)
 	# set a 10Hz frequency for this loop
 	loop_rate = rospy.Rate(10)
 
 	# define a plan variable
 	plan = Plan()
+	
 	tfBuffer = tf2_ros.Buffer()
-    listener = tf2_ros.TransformListener(tfBuffer)
+	listener = tf2_ros.TransformListener(tfBuffer)
 	q_rot = Quaternion()
 	#source: lect 20, slide 11-12, https://wiki.ros.org/tf2/Tutorials
 	while not rospy.is_shutdown():
-		try:
-			trans = tfBuffer.lookup_transform("base", "camera_color_optical_frame", rospy.Time())
+		if test = True:
+			plan_pub.publish(plan)
+		else: 
 			#create message
 			frame_pt = tf2_geometry_msgs.PointStamped()#init obj
-    		frame_pt.header.frame_id = 'camera_color_optical_frame'#set ID
-    		frame_pt.header.stamp = rospy.get_rostime()#timestamp
-    		#assign points from stored values
-    		frame_pt.point.x = raw_x
-    		frame_pt.point.y = raw_y
-    		frame_pt.point.z = raw_z
-   	 		#point to base frame
-    		new_pt = tfBuffer.transform(frame_pt, 'base', rospy.Duration(1.0))#camera to base
-    		#get coord
-    		base = tfBuffer.transform(ptcam,'base', rospy.Duration(1.0))
-			x = base.point.x
-			y = base.point.y
-			z = base.point.z
-  	  		radius = rad
-  	  		q_rot = trans.transform.translation
-  	  		print("x: ", x, "\n", "y: ", y,"\n", "z: ", z, "\n", "radius: ", radius)
-		except (tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException):
-			print('Frames not available!!!')
-			loop_rate.sleep()
-			continue
+			frame_pt.header.frame_id = 'camera_color_optical_frame'#set ID
+			frame_pt.header.stamp = rospy.get_rostime()#timestam
+			frame_pt.point.x = raw_x
+			frame_pt.point.y = raw_y
+			frame_pt.point.z = raw_z
+			#point to base frame (point 2)
+   	 		
+			new_pt = tfBuffer.transform(frame_pt, 'base', rospy.Duration(1.0))
+   	 		#camera to base
+			plan_point1 = Twist()
+			# just a quick solution to send two target points
+			# define a point close to the initial position
+			#initial positions from running "rosrun ur5e_control manual_initialization"
+			#copied from terminal
+			plan_point1.linear.x = -0.7##all initial positions 
+			plan_point1.linear.y = -0.14
+			plan_point1.linear.z = 0.245
+			plan_point1.angular.x =  3.14
+			plan_point1.angular.y = 0
+			plan_point1.angular.z = 1.57
+			# add this point to the plan
+			plan.points.append(plan_point1)
+	
+			plan_point2 = Twist()
+			# define a point away from the initial position
+			#move to position 2
+			plan_point2.linear.x = new_pt.point.x
+			plan_point2.linear.y = new_pt.point.y
+			plan_point2.linear.z = new_pt.point.z# decrease z (yaw) to move down for position 2
+			plan_point2.angular.x = 3.14 #angular position stay stagnent because only linear points move
+			plan_point2.angular.y = 0.0
+			plan_point2.angular.z = 1.57
+			# add this point to the plan
+			plan.points.append(plan_point2)
 			
-		
-		# publish the plan
-		plan_pub.publish(plan)
+			plan_point3 = Twist()
+			# define a point close to the initial position
+			#move to position 3
+			plan_point3.linear.x =  -.85 #decrease x (pitch) to move horizontal for position 3
+			plan_point3.linear.y = -0.14
+			plan_point3.linear.z = 0.245 #revert to initial z position to move back up
+			plan_point3.angular.x = 3.14 #angular positions stay stagnent
+			plan_point3.angular.y = 0.0
+			plan_point3.angular.z = 1.57
+			# add this point to the plan
+			plan.points.append(plan_point3)
+	
+			plan_point4 = Twist()
+			# define a point close to the initial position
+			#move to position 4
+			plan_point4.linear.x =  -.85 #keep x pitch position 
+			plan_point4.linear.y = -0.14
+			plan_point4.linear.z = 0.065 #decrease z(yaw) to same position as point 2 for position 4
+			plan_point4.angular.x = 3.14#angular positions stay stagnent 
+			plan_point4.angular.y = 0.0
+			plan_point4.angular.z = 1.57
+			# add this point to the plan
+			plan.points.append(plan_point4)
+	
 		# wait for 0.1 seconds until the next loop and repeat
 		loop_rate.sleep()

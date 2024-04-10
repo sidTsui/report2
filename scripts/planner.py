@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-#source: https://github.com/hsaeidi-uncw/ur5e_control.git
+#source: https://github.com/hsaeidi-uncw/ur5e_control.git, in clas slides, online resources
 #Sidney Tsui
 #Report 2
 

@@ -24,7 +24,6 @@ raw_x = 0
 raw_y = 0
 raw_z = 0
 rad = 0
-curr = [0,0,0,0,0,0]
 
 #processes data from ROS topic about the sphere
 
